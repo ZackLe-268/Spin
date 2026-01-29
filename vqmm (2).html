@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vòng quay may mắn</title>
+<style>
+body {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+}
+canvas {
+  background: #fff;
+  border-radius: 50%;
+}
+button {
+  margin-top: 15px;
+  padding: 10px 25px;
+  font-size: 18px;
+}
+#result {
+  margin-top: 15px;
+  font-size: 22px;
+  font-weight: bold;
+  color: red;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎉 Vòng quay may mắn 🎉</h2>
+
+<canvas id="wheel" width="300" height="300"></canvas>
+<br>
+<button onclick="spin()">QUAY</button>
+
+<div id="result"></div>
+
+<script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const result = document.getElementById("result");
+
+const prizes = [
+  { text: "5%", chance: 10 },
+  { text: "10%", chance: 10 },
+  { text: "15%", chance: 50 },
+  { text: "20%", chance: 10 },
+  { text: "bánh đậu xanh", chance: 10},
+  { text: "mì trẻ em", chance: 10 }
+];
+
+const colors = ["#ff7675", "#74b9ff", "#ffeaa7", "#55efc4", "#a29bfe", "#fd79a8"];
+const center = 150;
+const radius = 140;
+const sliceAngle = (2 * Math.PI) / prizes.length;
+
+let angle = 0;
+let spinning = false;
+
+function drawWheel() {
+  for (let i = 0; i < prizes.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.fillStyle = colors[i];
+    ctx.arc(
+      center,
+      center,
+      radius,
+      angle + i * sliceAngle,
+      angle + (i + 1) * sliceAngle
+    );
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(angle + i * sliceAngle + sliceAngle / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 16px Arial";
+    ctx.fillText(prizes[i].text, radius - 10, 5);
+    ctx.restore();
+  }
+
+  // Kim chỉ
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.moveTo(center - 10, 5);
+  ctx.lineTo(center + 10, 5);
+  ctx.lineTo(center, 30);
+  ctx.fill();
+}
+
+function getPrizeIndex() {
+  let rand = Math.random() * 100;
+  let total = 0;
+  for (let i = 0; i < prizes.length; i++) {
+    total += prizes[i].chance;
+    if (rand <= total) return i;
+  }
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  result.innerText = "";
+
+  const prizeIndex = getPrizeIndex();
+
+  const current = angle % (2 * Math.PI);
+
+  // kim ở trên, chỉ xuống
+  const desired =
+    -Math.PI / 2 - (prizeIndex * sliceAngle + sliceAngle / 2);
+
+  // số vòng quay thêm
+  const extraSpins = 6 * 2 * Math.PI;
+
+  // bù lại phần góc hiện tại
+  const targetAngle = angle + extraSpins + (desired - current);
+
+  const startAngle = angle;
+  let startTime = null;
+
+  function animate(time) {
+    if (!startTime) startTime = time;
+    const progress = Math.min((time - startTime) / 4000, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    angle = startAngle + (targetAngle - startAngle) * ease;
+    ctx.clearRect(0, 0, 300, 300);
+    drawWheel();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      angle = targetAngle;
+      ctx.clearRect(0, 0, 300, 300);
+      drawWheel();
+      result.innerText =
+        "🎁 Bạn nhận được voucher " + prizes[prizeIndex].text;
+      spinning = false;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+drawWheel();
+</script>
+
+</body>
+</html>
