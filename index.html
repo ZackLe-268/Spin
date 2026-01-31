@@ -37,11 +37,11 @@ button {
 <button onclick="spin()">QUAY</button>
 
 <div id="result"></div>
-
 <script>
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const result = document.getElementById("result");
+const spinBtn = document.querySelector("button");
 
 const prizes = [
   { text: "5%", chance: 10 },
@@ -59,6 +59,14 @@ const sliceAngle = (2 * Math.PI) / prizes.length;
 
 let angle = 0;
 let spinning = false;
+
+// 👉 kiểm tra đã quay chưa
+let hasSpun = localStorage.getItem("hasSpun") === "true";
+if (hasSpun) {
+  spinBtn.disabled = true;
+  spinBtn.innerText = "ĐÃ QUAY";
+  result.innerText = "❌ Bạn đã quay rồi";
+}
 
 function drawWheel() {
   for (let i = 0; i < prizes.length; i++) {
@@ -84,7 +92,6 @@ function drawWheel() {
     ctx.restore();
   }
 
-  // Kim chỉ
   ctx.fillStyle = "red";
   ctx.beginPath();
   ctx.moveTo(center - 10, 5);
@@ -103,22 +110,15 @@ function getPrizeIndex() {
 }
 
 function spin() {
-  if (spinning) return;
+  if (spinning || hasSpun) return;
+
   spinning = true;
   result.innerText = "";
 
   const prizeIndex = getPrizeIndex();
-
   const current = angle % (2 * Math.PI);
-
-  // kim ở trên, chỉ xuống
-  const desired =
-    -Math.PI / 2 - (prizeIndex * sliceAngle + sliceAngle / 2);
-
-  // số vòng quay thêm
+  const desired = -Math.PI / 2 - (prizeIndex * sliceAngle + sliceAngle / 2);
   const extraSpins = 6 * 2 * Math.PI;
-
-  // bù lại phần góc hiện tại
   const targetAngle = angle + extraSpins + (desired - current);
 
   const startAngle = angle;
@@ -136,19 +136,22 @@ function spin() {
     if (progress < 1) {
       requestAnimationFrame(animate);
     } else {
-      angle = targetAngle;
-      ctx.clearRect(0, 0, 300, 300);
-      drawWheel();
-      result.innerText =
-        "🎁 Bạn nhận được voucher " + prizes[prizeIndex].text;
+      result.innerText = "🎁 Bạn nhận được voucher " + prizes[prizeIndex].text;
+
+      // 👉 khóa quay vĩnh viễn
+      hasSpun = true;
+      localStorage.setItem("hasSpun", "true");
+      spinBtn.disabled = true;
+      spinBtn.innerText = "ĐÃ QUAY";
+
       spinning = false;
     }
   }
 
   requestAnimationFrame(animate);
 }
+
 drawWheel();
 </script>
-
 </body>
 </html>
